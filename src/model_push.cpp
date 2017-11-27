@@ -72,9 +72,9 @@ namespace gazebo
           for(int i=0;i<2;i++)
           {
               this->acilar[i]=_msg->data[i];
-              std::cout << this->acilar[i] << " " ;
+              //std::cout << this->acilar[i] << " " ;
           }
-          std::cout << std::endl;
+          //std::cout << std::endl;
       }
 
 
@@ -95,9 +95,14 @@ namespace gazebo
           this->model->GetJointController()->SetPositionTarget("box::front_flipper_joint",-acilar[0]);
           this->model->GetJointController()->SetPositionTarget("box::rear_flipper_joint",acilar[1]);
 
-          this->pose_main = this->model->GetRelativePose();
-          this->pose_tepsi = math::Pose(0,0,0, 0, -this->model->GetRelativePose().rot.GetPitch(),0);
-          this->model->GetLink("tepsi")->SetRelativePose(this->pose_tepsi,true);
+          this->pose_main = this->model->GetWorldPose();
+
+          this->model->GetJointController()->SetPositionTarget("box::tepsi_x",-this->pose_main.rot.GetRoll());
+          this->model->GetJointController()->SetPositionTarget("box::tepsi_y",-this->pose_main.rot.GetPitch());
+/*
+          this->pose_main = this->model->GetWorldPose();
+          this->pose_tepsi = math::Pose(0,0,0,-this->pose_main.rot.GetRoll(), -this->pose_main.rot.GetPitch(),0);
+          this->model->GetLink("tepsi")->SetRelativePose(this->pose_tepsi,true);*/
 
 
     }

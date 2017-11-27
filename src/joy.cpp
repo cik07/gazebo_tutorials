@@ -54,6 +54,7 @@ msg.data.insert(msg.data.end(), vec1.begin(), vec1.end());
 
 void TeleopTurtle::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
+
     if(joy->buttons[4]==1)
     {
         if(msg.data.at(0)<1.5)
@@ -87,16 +88,15 @@ void TeleopTurtle::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
     }
 
-    if(joy->buttons[0]==1 && scale<1)
+    if(joy->buttons[0]==1 && scale<3)
     {
         scale+=0.2;
     }
-    if(joy->buttons[2]==1 && scale>0)
+    if(joy->buttons[2]==1 && scale>0.1)
     {
         scale-=0.2;
     }
 
-        ROS_INFO("hello");
   geometry_msgs::Twist twist;
   twist.linear.x=scale*joy->axes[1];
   twist.angular.z=scale*joy->axes[0];
