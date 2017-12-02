@@ -1398,7 +1398,7 @@
       </collision>
     </link>
     <link name='linkk'>
-      <pose frame=''>0 0 0.1 0 -0 0</pose>
+      <pose frame=''>0.3 0 0.21 0 -0 0</pose>
       <inertial>
         <mass>0.1</mass>
         <inertia>
@@ -1487,7 +1487,7 @@
         <pose frame=''>0 0 0 0 0 0</pose>
       </sensor>
       <visual name='base_link_fixed_joint_lump__hokuyo_frame_visual_2'>
-        <pose frame=''>0.13 0 0.12 0 -0 0</pose>
+        <pose frame=''>0. 0 0.2 0 -0 0</pose>
         <geometry>
           <mesh>
             <scale>1 1 1</scale>
@@ -1510,7 +1510,7 @@
             <uri>model://kinect/meshes/kinect.dae</uri>
           </mesh>
         </geometry>
-        <pose frame=''>0 0 0.2 0 -0 0</pose>
+        <pose frame=''>0 0 0.3 0 -0 0</pose>
         <cast_shadows>1</cast_shadows>
         <transparency>0</transparency>
       </visual>
@@ -1520,7 +1520,7 @@
         <pose frame=''>0 0 0 0 -0 0</pose>
         <geometry>
           <box>
-            <size>0.073 0.276 0.072</size>
+            <size>0.001 0.001 0.001</size>
           </box>
         </geometry>
         <surface>
