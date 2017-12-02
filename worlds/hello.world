@@ -10,15 +10,15 @@
     </include>
 	
 
-<model name="stair">
+<model name="enviroment">
 	<static>true</static>
 	<pose frame=''>0 0 0 0 0 0</pose>
 	<link name="stair">
 		<collision name="collision">
 			<geometry>
 				<mesh>
-					<scale>1 1 1</scale>
-					<uri>./enviroment.dae</uri>
+					<scale>.5 .5 .5</scale>
+					<uri>./map.dae</uri>
 				</mesh>
 			</geometry>
 			<surface>
@@ -33,8 +33,8 @@
 		<visual name="visual">
 			<geometry>
 				<mesh>
-					<scale>1 1 1</scale>
-					<uri>./enviroment.dae</uri>
+					<scale>.5 .5 .5</scale>
+					<uri>./map.dae</uri>
 				</mesh>
 			</geometry>
 		</visual>
@@ -43,7 +43,7 @@
 
 
   <model name='box'>
-<pose frame=''>0 0 0.5 0 0 0</pose>
+<pose frame=''>0 0 1.1 0 0 0</pose>
     <link name='base_link'>
       <pose frame=''>0 0 0 0 -0 0</pose>
       <inertial>
