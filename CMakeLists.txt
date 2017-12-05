@@ -5,6 +5,8 @@ project(gazebo_tutorials)
 find_package(catkin REQUIRED COMPONENTS 
   roscpp 
   gazebo_ros
+  pcl_ros
+  pcl_conversions
 )
 
 # Depend on system install of Gazebo
@@ -25,12 +27,11 @@ catkin_package(
 add_library(model_push src/model_push.cpp)
 target_link_libraries(model_push ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
-
 add_executable(joy src/joy.cpp)
 target_link_libraries(joy ${catkin_LIBRARIES})
 
-#add_library(move src/move.cpp)
-#target_link_libraries(move ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+add_executable(pcl src/pcl.cpp)
+target_link_libraries(pcl ${catkin_LIBRARIES})
 
 install(DIRECTORY launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
