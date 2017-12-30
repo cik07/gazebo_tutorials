@@ -69,6 +69,7 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& cloud_blob) {
     float duzlem[10][4]; // Segmente edilen yuzeylerin duzlem denklemi katsayilarini tutan dizi; birinci indis duzlemi, ikinci indis o duzlemin katsayilarini tutar
     int count=0;
     float merkez[10][3];
+    int tipler[10];
     std_msgs::Int8 tip;
 
     std::cout << std::endl << "----------------------------------" << std::endl;
@@ -96,9 +97,12 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& cloud_blob) {
         duzlem[count][3]=coefficients->values[3];
 
         // Duzlemin tipi belirlenir. (Tanima islemi)
-        tip.data = function(duzlem[count][0], duzlem[count][1], duzlem[count][2], duzlem[count][3]);
+        tipler[count] = function(duzlem[count][0], duzlem[count][1], duzlem[count][2], duzlem[count][3]);
 
         std::cout << std::endl;
+
+        // Cisim icin tutulan eski merkez degeri silinerek sifirlanir.
+        for (int i=0; i<3; i++) merkez[count][i]=0;
 
         // Duzlem merkez hesaplamasi yapilir.
         for (int i=0; i<inliers->indices.size(); i++) {
@@ -109,7 +113,7 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& cloud_blob) {
 
 
         // Belirlenen duzlem rampa/merdiven olarak secilirse standart sapma islemi gerceklestirilerek bu duzlemin merdiven ve rampa engellerinden hangisi oldugu algilanir.
-        if (tip.data==4) {
+        if (tipler[count]==4) {
 
             float sapma=0;
 
@@ -132,11 +136,11 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& cloud_blob) {
 
             std::cout << "Sapma: " << sapma <<std::endl;
 
-            if ( sapma > 0.00058 ) tip.data=5;
+            if ( sapma > 0.0005 ) tipler[count]=5;
         }
 
         // Duzlemin tipi ekrana yazdirilir.
-        switch (tip.data)  {
+        switch (tipler[count])  {
             case 0:
                 std::cout << "Zemin" << std::endl;
                 break;
@@ -183,6 +187,14 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& cloud_blob) {
     }
 
     std::cout << std::endl << "Found " << i << " planes." << std::endl;
+
+    for (int j=0; j<i; j++) {
+        if ( tipler[j] != 0 ) {
+            if (merkez[j][0] < 0.5 && merkez[j][0] > -0.5 ) {
+                tip.data = tipler[j];
+            }
+        }
+    }
 
     // Engel tipi publish edilir.
     tip_pub.publish(tip);

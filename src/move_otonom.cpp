@@ -62,8 +62,8 @@ void MoveOtonom::tipCallback(const std_msgs::Int8::ConstPtr& tip)
      * 1 - Duvar
      * 2 - Çukur
      * 3 - Kaldırım
-     * 4 - Rampa veya Merdiven
-     *
+     * 4 - Rampa
+     * 5 - Merdiven
      */
 
     std::cout << std::endl << "Move Otonom" << std::endl;
