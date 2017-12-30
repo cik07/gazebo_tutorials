@@ -4,11 +4,9 @@
 #include <iostream>
 #include <ros/ros.h>
 
-#include <stdlib.h>
-#include <time.h>
 #include <math.h>
-#include <std_msgs/Int8.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <std_msgs/Int8.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/io/pcd_io.h>
@@ -21,16 +19,13 @@
 
 
 ros::Publisher pub;
-ros::Publisher tip_pub;
+ros::Publisher type_pub;
 int function(float, float, float, float);
 float treshold(float);
 
 void cloud_cb (const pcl::PCLPointCloud2ConstPtr& cloud_blob) {
     pcl::PCLPointCloud2::Ptr cloud_filtered_blob (new pcl::PCLPointCloud2);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>), cloud_p (new pcl::PointCloud<pcl::PointXYZRGB>), cloud_f (new pcl::PointCloud<pcl::PointXYZRGB>);
-
-    // random generator initialize edilir
-    srand(time(NULL));
 
     // Create the filtering object: downsample the dataset using a leaf size of 1cm
     pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
@@ -53,8 +48,8 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& cloud_blob) {
     // Mandatory
     seg.setModelType (pcl::SACMODEL_PLANE);
     seg.setMethodType (pcl::SAC_RANSAC);
-    seg.setMaxIterations (1000);
-    seg.setDistanceThreshold (0.05);
+    seg.setMaxIterations (0.1);
+    seg.setDistanceThreshold (1.0);
     seg.setInputCloud (cloud_filtered);
 
     int i = 0, nr_points = (int) cloud_filtered->points.size ();
@@ -68,13 +63,9 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& cloud_blob) {
 
     float duzlem[10][4]; // Segmente edilen yuzeylerin duzlem denklemi katsayilarini tutan dizi; birinci indis duzlemi, ikinci indis o duzlemin katsayilarini tutar
     int count=0;
-    float merkez[10][3];
-    std_msgs::Int8 tip;
-
-    std::cout << std::endl << "----------------------------------" << std::endl;
+    std_msgs::Int8 tip; // Engel tipi
 
     // While 30% of the original cloud is still there
-    // Her duzlem icin farkli renklendirmeler yapilir
     while (remaining->size () > 0.1 * nr_points) {
 
         // Segment the largest planar component from the remaining cloud
@@ -82,12 +73,7 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& cloud_blob) {
         seg.segment (*inliers, *coefficients);
         if (inliers->indices.size () == 0) break;
 
-        uint8_t r = rand()%256, g = rand()%256, b = rand()%256;
-
-        for (std::vector<int>::iterator it = remaining->begin(); it != remaining->end(); ++it) {
-            uint32_t rgb = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
-            cloud_filtered->at(*it).rgb = *reinterpret_cast<float*>(&rgb);
-        }
+        //std::cout << i << ". yüzeyin sahip oldugu nokta sayisi: " << inliers->indices.at(0) << " " << inliers->indices.at(1) << " " << inliers->indices.at(2) << std::endl;
 
         // Duzlemlerin verileri duzlem matrisine alinir.
         duzlem[count][0]=coefficients->values[0];
@@ -95,47 +81,14 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& cloud_blob) {
         duzlem[count][2]=coefficients->values[2];
         duzlem[count][3]=coefficients->values[3];
 
-        // Duzlemin tipi belirlenir. (Tanima islemi)
+
         tip.data = function(duzlem[count][0], duzlem[count][1], duzlem[count][2], duzlem[count][3]);
 
-        std::cout << std::endl;
-
-        // Duzlem merkez hesaplamasi yapilir.
-        for (int i=0; i<inliers->indices.size(); i++) {
-            merkez[count][0] += cloud_filtered->points[inliers->indices.at(i)].x / inliers->indices.size();
-            merkez[count][1] += cloud_filtered->points[inliers->indices.at(i)].y / inliers->indices.size();
-            merkez[count][2] += cloud_filtered->points[inliers->indices.at(i)].z / inliers->indices.size();
-        }
-
-
-        // Belirlenen duzlem rampa/merdiven olarak secilirse standart sapma islemi gerceklestirilerek bu duzlemin merdiven ve rampa engellerinden hangisi oldugu algilanir.
         if (tip.data==4) {
-
-            float sapma=0;
-
-            for (int i=0; i<inliers->indices.size(); i++) {
-                float x = cloud_filtered->points[inliers->indices.at(i)].x;
-                float y = cloud_filtered->points[inliers->indices.at(i)].y;
-                float z = cloud_filtered->points[inliers->indices.at(i)].z;
-                float a = duzlem[count][0];
-                float b = duzlem[count][1];
-                float c = duzlem[count][2];
-                float d = duzlem[count][3];
-
-                float mesafe = fabs(a*x+b*y+c*z+d) / sqrt(a*a + b*b + c*c);
-
-                sapma += mesafe * mesafe;
-
-            }
-
-            sapma = sapma / inliers->indices.size();
-
-            std::cout << "Sapma: " << sapma <<std::endl;
-
-            if ( sapma > 0.00058 ) tip.data=5;
+            if ( treshold( (duzlem[count][0]*cloud_filtered->points[inliers->indices[0]].x + duzlem[count][1]*cloud_filtered->points[inliers->indices[0]].y + duzlem[count][2]*cloud_filtered->points[inliers->indices[0]].z + duzlem[count][3]) ) != 0  )
+                tip.data=5;
         }
 
-        // Duzlemin tipi ekrana yazdirilir.
         switch (tip.data)  {
             case 0:
                 std::cout << "Zemin" << std::endl;
@@ -160,11 +113,26 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& cloud_blob) {
                 std::cout << "Tanınmayan ortam" << std::endl;
         }
 
-        // Duzlem bilgileri ekrana yazdirilir.
-        std::cout << "Merkez |-->  [x]: " << merkez[count][0] << " - [y]: " << merkez[count][1] << " - [z]: " << merkez[count][2] << std::endl;
-        std::cout << "Denklem |--> [a]: " << duzlem[count][0] << " - [b]: " << duzlem[count][1] << " - [c]: " << duzlem[count][2] << " - [d]: " << duzlem[count][3] << std::endl;
-
         count++;
+
+        std::cout << coefficients->values[0]<< std::endl;
+        std::cout << coefficients->values[1]<< std::endl;
+        std::cout << coefficients->values[2]<< std::endl;
+        std::cout << coefficients->values[3]<< std::endl;
+
+        std::cout << cloud_filtered->points[inliers->indices[0]].x << " ----------------------------- point x değeri" << std::endl;
+        std::cout << inliers->indices.data()[0] <<" ----------------------------- indices.data değeri" << std::endl;
+
+
+        /*
+        for( int a = 0; a < 12; a = a + 1 ) {
+            std::cout << coefficients->values[a]<< std::endl;
+        }
+
+        std::cout << coefficients->values.at(0)<< std::endl;
+        std::cout << coefficients->values[0]<< std::endl;
+
+        */
 
 
         // Extract the inliers
@@ -182,10 +150,11 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& cloud_blob) {
         i++;
     }
 
-    std::cout << std::endl << "Found " << i << " planes." << std::endl;
+    std::cout << "Found " << i << " planes." << std::endl;
 
     // Engel tipi publish edilir.
-    tip_pub.publish(tip);
+    type_pub.publish(tip);
+
 
     // Color all the non-planar things.
     for (std::vector<int>::iterator it = remaining->begin(); it != remaining->end(); ++it) {
@@ -212,8 +181,8 @@ int main (int argc, char** argv) {
     // Create a ROS publisher for the output point cloud
     pub = nh.advertise<pcl::PCLPointCloud2> ("obstacles", 1);
 
-    // Ondeki cismin tipi icin publisher olusturulur
-    tip_pub = nh.advertise<std_msgs::Int8> ("tip", 1);
+    // Tip publisherı oluşturulur.
+    type_pub = nh.advertise<std_msgs::Int8>("set_type",1);
 
     // Spin
     ros::spin ();
@@ -254,7 +223,7 @@ int function (float a, float b, float c, float d) {
 }
 
 float treshold (float x) {
-    if ( fabs(x) < 0.09 ) {
+    if ( fabs(x) < 0.05 ) {
         return 0;
     }
     else return x;

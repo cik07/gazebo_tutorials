@@ -33,6 +33,12 @@ target_link_libraries(joy ${catkin_LIBRARIES})
 add_executable(pcl src/pcl.cpp)
 target_link_libraries(pcl ${catkin_LIBRARIES})
 
+add_executable(ilk src/pcl_ilk.cpp)
+target_link_libraries(ilk ${catkin_LIBRARIES})
+
+add_executable(otonom src/move_otonom.cpp)
+target_link_libraries(otonom ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
 install(DIRECTORY launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
